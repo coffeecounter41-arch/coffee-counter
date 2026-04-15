@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-dash-bg: #edf4ff;
+  --color-dash-card: #ffffff;
+  --color-dash-card-hover: #f8fbff;
+  --color-dash-accent: #2563eb;
+  --color-dash-cream: #f59e0b;
+  --color-dash-muted: #64748b;
+  --font-tajawal: "Tajawal", sans-serif;
+}
+
+:root {
+  --background: #edf4ff;
+  --foreground: #0f172a;
+  --accent: #2563eb;
+  --card: #ffffff;
+  --border: rgba(37, 99, 235, 0.2);
+}
+
+body {
+  background:
+    radial-gradient(1100px 650px at 8% 12%, rgba(245, 158, 11, 0.16) 0%, transparent 46%),
+    radial-gradient(1100px 650px at 88% 8%, rgba(37, 99, 235, 0.18) 0%, transparent 42%),
+    radial-gradient(900px 500px at 70% 90%, rgba(59, 130, 246, 0.1) 0%, transparent 48%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-tajawal);
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  min-height: 100vh;
+  color: #0f172a;
+}
+
+.luxe-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.82));
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 1.75rem;
+  box-shadow: 0 20px 35px rgba(37, 99, 235, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+}
+
+.luxe-card-soft {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 1.25rem;
+}
+
+.luxe-title {
+  color: #1e3a8a;
+  letter-spacing: 0.03em;
+}
+
+.luxe-table thead {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.luxe-table tr {
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.luxe-table tbody tr:hover {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+/* تحسين شكل المدخلات */
+input::placeholder {
+  color: #9ca3af;
+  opacity: 0.8;
+}

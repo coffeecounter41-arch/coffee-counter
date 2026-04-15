@@ -1,0 +1,188 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. جدول مسؤولي النظام (الأدمن)
+model Admin {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
+
+// 2. جدول العملاء (أصحاب المقاهي)
+model Client {
+  id        String   @id @default(cuid())
+  uid       String   @unique // المعرف الفريد المرتبط بالهاردوير
+  name      String // اسم المحل أو العميل
+  phone     String?
+  address   String?
+  city      String?
+  devices   Device[]
+  username  String?  @unique
+  password  String?
+  settings  ClientSettings?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 2.1 إعدادات العميل (حساب + ورديات + استهلاك البن)
+model ClientSettings {
+  id         String   @id @default(cuid())
+  clientId   String   @unique
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  // استهلاك البن (غرام لكل شوت)
+  gramsSingle Float   @default(7)
+  gramsDouble Float   @default(14)
+
+  // عدد الورديات + مواعيدها (قابلة للتخصيص)
+  shiftCount  Int     @default(2)
+  shifts      ClientShift[]
+
+  // مصدر أوامر reset (من العداد فقط أو أيضاً من الداشبورد)
+  // VALUES: "COUNTER" | "DASHBOARD" | "BOTH"
+  resetFrom   String  @default("COUNTER")
+
+  // التوقيت المحلي (IANA: Africa/Tripoli لبنغازي/ليبيا)
+  timezone    String  @default("Africa/Tripoli")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClientShift {
+  id          String         @id @default(cuid())
+  settingsId  String
+  settings    ClientSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  index       Int
+  startTime   String // "HH:MM"
+  endTime     String // "HH:MM"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([settingsId, index])
+}
+
+// 3. جدول الأجهزة (العدادات الذكية)
+model Device {
+  id           String @id @default(cuid())
+  serialNumber String @unique // رقم الجهاز التسلسلي
+  name         String? // اسم مخصص من طرف العميل
+  status       String @default("active") // active, inactive, maintenance
+  needsReset      Boolean  @default(false)
+  // بيانات الهاردوير (للصيانة والمتابعة)
+  firmwareVersion String?
+  macAddress      String?
+  wifiSignal      String?
+  lastIpAddress   String?
+  morningCups   Int @default(0)
+  eveningCups   Int @default(0)
+  nightCups     Int @default(0)
+  currentShiftIndex Int @default(1) // 1=صباح، 2=مساء، 3=ليل
+  isMorningClosed Boolean @default(false) // للتوافق: true = currentShiftIndex >= 2
+
+
+  // --- الإحصائيات الحالية (قابلة للتصفير من واجهة العميل) ---
+  currentSingle Int @default(0) // عدد أكواب السنجل منذ آخر تصفير
+  currentDouble Int @default(0) // عدد أكواب الدبل منذ آخر تصفير
+
+  // --- الإحصائيات الجملية (عداد الماكينة الحقيقي - لا يصفر) ---
+  totalCups       Int @default(0) // الإجمالي التراكمي (Single + Double * 2)
+  lastTotalSent   Int @default(0) // آخر قيمة أرسلها العداد ميكانيكياً
+  lastSingleSent  Int @default(0) // آخر single أرسله العداد
+  lastDoubleSent  Int @default(0) // آخر double أرسله العداد
+
+  // بيانات التصفير (Reference Point)
+  lastResetAt DateTime @default(now())
+
+  // العلاقات
+  clientId String
+  client   Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  logs     DeviceLog[]
+  shifts   Shift[]
+  diagnosticState    DiagnosticState?
+  diagnosticEvents   DiagnosticEvent[]
+  diagnosticCommands DiagnosticCommand[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 4. جدول السجلات (التاريخ والرسوم البيانية)
+model DeviceLog {
+  id       String @id @default(cuid())
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  // تفاصيل العملية
+  coffeeType String @default("single") // "single" أو "double"
+  idhafa     Int // القيمة المضافة: 1 أو 2
+  totalSent  Int // العداد الجملي الميكانيكي لحظة الإرسال
+
+  // نوع السجل
+  type String @default("cup") // "cup" للقهوة، "reset" لعملية تصفير العداد
+
+  isCorrection Boolean  @default(false) // هل السجل ناتج عن تصحيح يدوي أو آلي
+  createdAt    DateTime @default(now())
+}
+
+model Shift {
+  id        String   @id @default(cuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id])
+  type      String   // "MORNING" أو "EVENING" أو "NIGHT"
+  count     Int      // عدد الأكواب في هذه الوردة
+  singleCount Int      @default(0) // حقل جديد
+  doubleCount Int      @default(0) // حقل جديد
+  createdAt DateTime @default(now())
+}
+
+model DiagnosticState {
+  id            String   @id @default(cuid())
+  deviceId       String   @unique
+  device         Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  isRunning      Boolean  @default(false)
+  serviceStatus  String   @default("active") // active | inactive
+  sensors        Json?
+  lastError      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model DiagnosticEvent {
+  id          String   @id @default(cuid())
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  type        String   // SENSOR | ERROR | INFO | COMMAND
+  sensorKey   String?
+  sensorValue Boolean?
+  message     String?
+  createdAt   DateTime @default(now())
+
+  @@index([deviceId, createdAt])
+}
+
+model DiagnosticCommand {
+  id             String   @id @default(cuid())
+  deviceId       String
+  device         Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  command        String   // diagno_start | diagno_stop | out_service | on_service
+  status         String   @default("pending") // pending | sent | executed | cancelled
+  source         String   @default("CLIENT_DASHBOARD")
+  payload        Json?
+  createdAt      DateTime @default(now())
+  acknowledgedAt DateTime?
+  executedAt     DateTime?
+
+  @@index([deviceId, status, createdAt])
+}
