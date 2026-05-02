@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { SignJWT } from "jose"; // npm install jose
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
 
