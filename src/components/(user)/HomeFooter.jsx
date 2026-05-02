@@ -25,14 +25,14 @@ export default function HomeFooter() {
           <div className="flex items-center gap-6">
             <div className="flex gap-4">
               <a 
-                href="https://www.facebook.com/profile.php?id=61587862044858" 
+                href="https://www.facebook.com/med.majdoub33" 
                 className="text-slate-400 hover:text-[#1877F2] transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook size={18} />
               </a>
               <a 
-                href="https://wa.me/+218913724309" 
+                href="https://wa.me/+21652686430" 
                 className="text-slate-400 hover:text-[#25D366] transition-colors"
                 aria-label="WhatsApp"
               >
